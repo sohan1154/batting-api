@@ -94,16 +94,21 @@ function manageToken(req, params, userInfo, callback) {
             });
         }
         else {
-            let query = `UPDATE user_tokens SET token='${token}', updated_at='${helper.getCurrentDate()}' WHERE user_id=${userInfo.id}`;
-            c.log('query:', query)
-            req.connection.query(query, function (err, results) {
-                console.log('results:', results)
-                if (err) {
-                    callback(err);
-                } else {
-                    callback(null, token);
-                }
-            });
+
+            // // MAIN CODE
+            // let query = `UPDATE user_tokens SET token='${token}', updated_at='${helper.getCurrentDate()}' WHERE user_id=${userInfo.id}`;
+            // c.log('query:', query)
+            // req.connection.query(query, function (err, results) {
+            //     console.log('results:', results)
+            //     if (err) {
+            //         callback(err);
+            //     } else {
+            //         callback(null, token);
+            //     }
+            // });
+
+            // TEMPORARY CODE
+            callback(null, results[0].token);
         }
     });
 }

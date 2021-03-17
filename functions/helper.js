@@ -1,7 +1,9 @@
 var moment = require('moment'); // require
+var momentTimezone = require('moment-timezone'); // require
 
 exports.vewRequest = (req, res, next) => {
     console.log('###################### REQUEST ############################')
+    console.warn('QUERY=>', req.query);
     console.warn('PARAMS=>', req.params);
     console.warn('BODY=>', req.body);
 
@@ -33,7 +35,8 @@ exports.sendResponse = (req, res, data) => {
     req.connection.end();
 
     console.log('###################### SUCCESS RESPONSE ############################')
-    console.log(data);
+    console.log('Response has been sent.');
+    // console.log(data);
 
     res.status(200);
     res.json(data);
@@ -117,7 +120,7 @@ exports.generateToken = (text) => {
 }
 
 exports.getFormatedDate = (date, format = "YYYY-MM-DD HH:mm:ss") => {
-    return moment(date).format(format);
+    return momentTimezone(date).utcOffset("+05:30").format(format);
 }
 
 exports.getCurrentDate = (format = "YYYY-MM-DD HH:mm:ss") => {

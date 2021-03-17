@@ -2,9 +2,11 @@
 exports.listing = function (req, res, next) {
 
     try {
-        let params = req.params;
+        let params = req.query;
 
-        req.connection.query(`SELECT Matches.*, Series.competition_name, Sports.sports_name FROM matches Matches JOIN series Series ON Matches.series_id = Series.id JOIN sports Sports ON Series.sports_id = Sports.id WHERE Matches.deleted_at IS NULL`, function (err, results, fields) {
+        let andWhere = (typeof params.seriesID !== 'undefined') ? `AND Matches.series_id=${params.seriesID}` : '';
+        
+        req.connection.query(`SELECT Matches.*, Series.competition_name, Sports.sports_name FROM matches Matches JOIN series Series ON Matches.series_id = Series.id JOIN sports Sports ON Series.sports_id = Sports.id WHERE Matches.deleted_at IS NULL ${andWhere}`, function (err, results, fields) {
 
             if (err) {
                 helper.sendErrorResponse(req, res, err);
@@ -21,7 +23,7 @@ exports.listing = function (req, res, next) {
                         competition_name: rowInfo.competition_name,
                         event_country_code: rowInfo.event_country_code,
                         event_timezone: rowInfo.event_timezone,
-                        event_open_date: rowInfo.event_open_date,
+                        event_open_date: helper.getFormatedDate(rowInfo.event_open_date, 'YYYY-MM-DD hh:mm A'),
                         market_count: rowInfo.market_count,
                         scoreboard_id: rowInfo.scoreboard_id,
                         liability_type: rowInfo.liability_type,

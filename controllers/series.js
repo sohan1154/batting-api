@@ -3,9 +3,11 @@
 exports.listing = function (req, res, next) {
 
     try {
-        let params = req.params;
+        let params = req.query;
 
-        req.connection.query(`SELECT Series.*, Sport.sports_name FROM series Series JOIN sports Sport ON Series.sports_id = Sport.id WHERE Series.deleted_at IS NULL`, function (err, results, fields) {
+        let andWhere = (typeof params.sportsID !== 'undefined') ? `AND Series.sports_id=${params.sportsID}` : '';
+        
+        req.connection.query(`SELECT Series.*, Sport.sports_name FROM series Series JOIN sports Sport ON Series.sports_id = Sport.id WHERE Series.deleted_at IS NULL ${andWhere}`, function (err, results, fields) {
 
             if (err) {
                 helper.sendErrorResponse(req, res, err);
