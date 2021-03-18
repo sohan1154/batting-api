@@ -13,6 +13,7 @@ var credits = require('./controllers/credits');
 var sports = require('./controllers/sports');
 var series = require('./controllers/series');
 var matches = require('./controllers/matches');
+var sessions = require('./controllers/sessions');
 
 /**
  * create server
@@ -56,14 +57,22 @@ server.get('/logout', users.logout);
 // sports   
 server.get('/sports/listing', permission.isAuthenticate, permission.isAdmin, sports.listing);
 server.put('/sports/change-status/:sports_id/:status', permission.isAuthenticate, permission.isAdmin, sports.change_status);
+
 // series
 server.get('/series/listing', permission.isAuthenticate, permission.isAdmin, series.listing);
 server.put('/series/change-status/:series_id/:status', permission.isAuthenticate, permission.isAdmin, series.change_status);
 server.put('/series/delete/:series_id', permission.isAuthenticate, permission.isAdmin, series.delete);
+
 // matches
 server.get('/matches/listing', permission.isAuthenticate, permission.isAdmin, matches.listing);
 server.put('/matches/change-status/:match_id/:status', permission.isAuthenticate, permission.isAdmin, matches.change_status);
 server.put('/matches/delete/:match_id', permission.isAuthenticate, permission.isAdmin, matches.delete);
+server.get('/matches/in-play', permission.isAuthenticate, permission.isPlayer, matches.in_play);
+
+// sessions
+server.get('/sessions/listing/:event_id', permission.isAuthenticate, permission.isAdmin, sessions.listing);
+server.get('/sessions/add-remove/:session_id/:status', permission.isAuthenticate, permission.isAdmin, sessions.add_remove);
+server.get('/sessions/abandoned/:session_id', permission.isAuthenticate, permission.isAdmin, sessions.abandoned);
 
 // sub-admins 
 server.post('/sub-admins/create-account', permission.isAuthenticate, permission.isAdmin, users.create_account);
