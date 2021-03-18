@@ -18,6 +18,7 @@ exports.history = function (req, res, next) {
                         creditor_id: rowInfo.action_user_id,
                         creditor_name: rowInfo.creditor_name,
                         credit: rowInfo.credit,
+                        withdraw: rowInfo.withdraw,
                         remark: rowInfo.remark,
                         created_at: helper.getFormatedDate(rowInfo.created_at),
                         updated_at: helper.getFormatedDate(rowInfo.updated_at),

@@ -87,6 +87,7 @@ server.put('/masters/change-status/:user_id/:status', permission.isAuthenticate,
 server.put('/masters/delete-account/:user_id', permission.isAuthenticate, permission.isSubAdmin, users.delete_account);
 server.put('/masters/restore-account/:user_id', permission.isAuthenticate, permission.isSubAdmin, users.restore_account);
 server.post('/masters/add-credit', permission.isAuthenticate, permission.isSubAdmin, users.add_credit);
+server.post('/masters/withdraw-credit', permission.isAuthenticate, permission.isSubAdmin, users.withdraw_credit);
 
 // players 
 server.post('/players/create-account', permission.isAuthenticate, permission.isMaster, users.create_account);
@@ -99,6 +100,7 @@ server.put('/players/change-status/:user_id/:status', permission.isAuthenticate,
 server.put('/players/delete-account/:user_id', permission.isAuthenticate, permission.isMaster, users.delete_account);
 server.put('/players/restore-account/:user_id', permission.isAuthenticate, permission.isMaster, users.restore_account);
 server.post('/players/add-credit', permission.isAuthenticate, permission.isMaster, users.add_credit);
+server.post('/players/withdraw-credit', permission.isAuthenticate, permission.isMaster, users.withdraw_credit);
 server.put('/players/change-betting-status/:user_id/:betting_status', permission.isAuthenticate, permission.isMaster, users.change_betting_status);
 
 // common

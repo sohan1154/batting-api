@@ -664,63 +664,321 @@ exports.restore_account = function (req, res, next) {
 
 exports.add_credit = function (req, res, next) {
 
-    try {
-        let params = req.body;
-        let user_id = params.user_id;
+    let params = req.body;
+    let internalData = {
+        currentUserRemainingCredits: 0
+    };
 
-        let query = `SELECT id, status, credit FROM users WHERE id = ${user_id} AND deleted_at IS NULL`;
-        req.connection.query(query, function (err, results, fields) {
+    async.series([
+        function (do_callback) {
 
-            if (err) {
-                helper.sendErrorResponse(req, res, err);
-            }
-            else if (!results.length) {
-                helper.sendErrorResponse(req, res, 'Account not found.');
-            }
-            else if (!results[0].status) {
-                helper.sendErrorResponse(req, res, 'Your account in-active, please contact to administrator.');
-            }
-            else {
+            // get user details
+            let query = `SELECT id, role, parent_id, status, credit FROM users WHERE id = ${params.user_id} AND deleted_at IS NULL`;
+            req.connection.query(query, function (err, results, fields) {
 
-                let rowInfo = results[0];
-                let totalCredit = (parseInt(params.credit) + parseInt(rowInfo.credit));
-                let query = `UPDATE users SET credit='${totalCredit}', updated_at='${helper.getCurrentDate()}' WHERE id=${user_id}`;
-                req.connection.query(query, function (err, results) {
+                if (err) {
+                    do_callback(err);
+                }
+                else if (!results.length) {
+                    do_callback('Account not found.');
+                }
+                else if (!results[0].status) {
+                    do_callback('Account is in-active, please active this account first.');
+                }
+                else {
+                    internalData.user = results[0];
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // get master details
+            if(internalData.user.role == 'Player') {
+
+                let query = `SELECT id, role, parent_id, status, credit FROM users WHERE role='Master' AND id = ${internalData.user.parent_id}`;
+                req.connection.query(query, function (err, results, fields) {
 
                     if (err) {
-                        helper.sendErrorResponse(req, res, err);
-                    } else {
-
-                        let data = {
-                            user_id: params.user_id,
-                            action_user_id: params.action_user_id,
-                            credit: params.credit,
-                            remark: params.remark,
-                            created_at: helper.getCurrentDate(),
-                            updated_at: helper.getCurrentDate(),
-                        }
-                        req.connection.query('INSERT INTO user_credits SET ?', data, function (err, results) {
-
-                            if (err) {
-                                helper.sendErrorResponse(req, res, 'Credit added into account, but error in create transaction history.');
-                            } else {
-
-                                let result = {
-                                    status: true,
-                                    message: 'Credit added into account.',
-                                    availableCredit: totalCredit,
-                                }
-                                helper.sendResponse(req, res, result);
-                            }
-                        });
+                        do_callback(err);
+                    }
+                    else if (!results.length) {
+                        do_callback('Master Account not found.');
+                    }
+                    else {
+                        internalData.master = results[0];
+                        do_callback();
                     }
                 });
             }
-        });
-    }
-    catch (err) {
-        helper.sendErrorResponse(req, res, err);
-    }
+            else if(internalData.user.role == 'Master') {
+                do_callback();
+            }
+            else {
+                do_callback('Please select proper user account.');
+            }
+        },
+        function (do_callback) {
+
+            // check master account balance
+            if (currentUser.role == 'Master') {
+                if(internalData.user.parent_id != currentUser.id) {
+                    do_callback('You are not a parent of this account.');
+                }
+                else if (internalData.master.credit < parseInt(params.credit)) {
+                    do_callback('Your account don\'t have sufficient credit.');
+                }
+                else {
+                    do_callback();
+                }
+            }
+            else if ((currentUser.role == 'Admin' || currentUser.role == 'Sub-Admin') && internalData.user.role == 'Player') {
+                if (internalData.master.credit < parseInt(params.credit)) {
+                    do_callback('Your masters account don\'t have sufficient credit.');
+                }
+                else {
+                    do_callback();
+                }
+            }
+            else if ((currentUser.role == 'Admin' || currentUser.role == 'Sub-Admin') && internalData.user.role == 'Master') {
+                do_callback();
+            }
+            else {
+                do_callback('You are not eligible to access this section.');
+            }
+        },
+        function (do_callback) {
+
+            // update user account credit
+            internalData.endUserUpdatedCredits = (parseInt(internalData.user.credit) + parseInt(params.credit));
+            let query = `UPDATE users SET credit='${internalData.endUserUpdatedCredits}', updated_at='${helper.getCurrentDate()}' WHERE id=${internalData.user.id}`;
+            req.connection.query(query, function (err, results) {
+
+                if (err) {
+                    do_callback(err);
+                } else {
+
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // store credit history 
+            let data = {
+                user_id: params.user_id,
+                action_user_id: params.action_user_id,
+                credit: params.credit,
+                withdraw: null,
+                remark: params.remark,
+                created_at: helper.getCurrentDate(),
+                updated_at: helper.getCurrentDate(),
+            }
+            req.connection.query('INSERT INTO user_credits SET ?', data, function (err, results) {
+
+                if (err) {
+                    do_callback('Credit added into account.');
+                } else {
+
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // update master account credit
+            if(internalData.user.role == 'Player') {
+
+                internalData.currentUserRemainingCredits = (parseInt(internalData.master.credit) - parseInt(params.credit));
+                let query = `UPDATE users SET credit='${internalData.currentUserRemainingCredits}', updated_at='${helper.getCurrentDate()}' WHERE id=${internalData.master.id}`;
+                req.connection.query(query, function (err, results) {
+
+                    if (err) {
+                        do_callback(err);
+                    } else {
+
+                        do_callback();
+                    }
+                });
+            } else {
+                do_callback();
+            }
+        },
+        
+    ], function (err) {
+        if (err) {
+            helper.sendErrorResponse(req, res, err);
+        } else {
+
+            let result = {
+                status: true,
+                message: 'Credit added into account.',
+                currentUserRemainingCredits: internalData.currentUserRemainingCredits,
+                endUserUpdatedCredits: internalData.endUserUpdatedCredits,
+            }
+            helper.sendResponse(req, res, result);
+        }
+    });
+
+}
+
+exports.withdraw_credit = function (req, res, next) {
+
+    let params = req.body;
+    let internalData = {
+        currentUserRemainingCredits: 0
+    };
+
+    async.series([
+        function (do_callback) {
+
+            // get user details
+            let query = `SELECT id, role, parent_id, status, credit FROM users WHERE id = ${params.user_id} AND deleted_at IS NULL`;
+            req.connection.query(query, function (err, results, fields) {
+
+                if (err) {
+                    do_callback(err);
+                }
+                else if (!results.length) {
+                    do_callback('Account not found.');
+                }
+                else if (!results[0].status) {
+                    do_callback('Account is in-active, please active this account first.');
+                }
+                else {
+                    internalData.user = results[0];
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // get master details
+            if(internalData.user.role == 'Player') {
+
+                let query = `SELECT id, role, parent_id, status, credit FROM users WHERE role='Master' AND id = ${internalData.user.parent_id}`;
+                req.connection.query(query, function (err, results, fields) {
+
+                    if (err) {
+                        do_callback(err);
+                    }
+                    else if (!results.length) {
+                        do_callback('Master Account not found.');
+                    }
+                    else {
+                        internalData.master = results[0];
+                        do_callback();
+                    }
+                });
+            }
+            else if(internalData.user.role == 'Master') {
+                do_callback();
+            }
+            else {
+                do_callback('Please select proper user account.');
+            }
+        },
+        function (do_callback) {
+
+            // check master account balance
+            if (currentUser.role == 'Master') {
+                if(internalData.user.parent_id != currentUser.id) {
+                    do_callback('You are not a parent of this account.');
+                }
+                else if (internalData.user.credit < parseInt(params.credit)) {
+                    do_callback('User account don\'t have sufficient credit.');
+                }
+                else {
+                    do_callback();
+                }
+            }
+            else if ((currentUser.role == 'Admin' || currentUser.role == 'Sub-Admin') && internalData.user.role == 'Master') {
+                if (internalData.user.credit < parseInt(params.credit)) {
+                    do_callback('Master account don\'t have sufficient credit.');
+                }
+                else {
+                    do_callback();
+                }
+            }
+            else {
+                do_callback('You are not eligible to access this section.');
+            }
+        },
+        function (do_callback) {
+
+            // update user account credit
+            internalData.endUserUpdatedCredits = (parseInt(internalData.user.credit) - parseInt(params.credit));
+            let query = `UPDATE users SET credit='${internalData.endUserUpdatedCredits}', updated_at='${helper.getCurrentDate()}' WHERE id=${internalData.user.id}`;
+            req.connection.query(query, function (err, results) {
+
+                if (err) {
+                    do_callback(err);
+                } else {
+
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // store credit history 
+            let data = {
+                user_id: params.user_id,
+                action_user_id: params.action_user_id,
+                credit: null,
+                withdraw: params.credit,
+                remark: params.remark,
+                created_at: helper.getCurrentDate(),
+                updated_at: helper.getCurrentDate(),
+            }
+            req.connection.query('INSERT INTO user_credits SET ?', data, function (err, results) {
+
+                if (err) {
+                    do_callback('Credit withdrawn from account.');
+                } else {
+
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            console.log('internalData.user::::::',internalData.user)
+            console.log('internalData.master::::::',internalData.master)
+            // update master account credit
+            if(internalData.user.role == 'Player') {
+
+                internalData.currentUserRemainingCredits = (parseInt(internalData.master.credit) + parseInt(params.credit));
+                let query = `UPDATE users SET credit='${internalData.currentUserRemainingCredits}', updated_at='${helper.getCurrentDate()}' WHERE id=${internalData.master.id}`;
+                req.connection.query(query, function (err, results) {
+
+                    if (err) {
+                        do_callback(err);
+                    } else {
+
+                        do_callback();
+                    }
+                });
+            } else {
+                do_callback();
+            }
+        },
+        
+    ], function (err) {
+        if (err) {
+            helper.sendErrorResponse(req, res, err);
+        } else {
+
+            let result = {
+                status: true,
+                message: 'Credit withdrawn from account.',
+                currentUserRemainingCredits: internalData.currentUserRemainingCredits,
+                endUserUpdatedCredits: internalData.endUserUpdatedCredits,
+            }
+            helper.sendResponse(req, res, result);
+        }
+    });
+
 }
 
 exports.update_account_settings = function (req, res, next) {
