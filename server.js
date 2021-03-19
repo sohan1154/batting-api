@@ -14,6 +14,7 @@ var sports = require('./controllers/sports');
 var series = require('./controllers/series');
 var matches = require('./controllers/matches');
 var sessions = require('./controllers/sessions');
+var settings = require('./controllers/settings');
 
 /**
  * create server
@@ -68,11 +69,12 @@ server.get('/matches/listing', permission.isAuthenticate, permission.isAdmin, ma
 server.put('/matches/change-status/:match_id/:status', permission.isAuthenticate, permission.isAdmin, matches.change_status);
 server.put('/matches/delete/:match_id', permission.isAuthenticate, permission.isAdmin, matches.delete);
 server.get('/matches/in-play', permission.isAuthenticate, permission.isPlayer, matches.in_play);
+server.get('/matches/user-match-odds/:event_id', permission.isAuthenticate, permission.isPlayer, matches.UserMatchOdds);
 
 // sessions
 server.get('/sessions/listing/:event_id', permission.isAuthenticate, permission.isAdmin, sessions.listing);
-server.get('/sessions/add-remove/:session_id/:status', permission.isAuthenticate, permission.isAdmin, sessions.add_remove);
-server.get('/sessions/abandoned/:session_id', permission.isAuthenticate, permission.isAdmin, sessions.abandoned);
+server.put('/sessions/add-remove/:session_id/:status', permission.isAuthenticate, permission.isAdmin, sessions.add_remove);
+server.put('/sessions/abandoned/:session_id', permission.isAuthenticate, permission.isAdmin, sessions.abandoned);
 
 // sub-admins 
 server.post('/sub-admins/create-account', permission.isAuthenticate, permission.isAdmin, users.create_account);
@@ -120,6 +122,8 @@ server.post('/settings/update-account-settings', permission.isAuthenticate, user
 server.post('/settings/change-password', permission.isAuthenticate, users.change_password);
 server.get('/settings/detail-account/:user_id', permission.isAuthenticate, users.detail_account);
 server.post('/settings/update-account', permission.isAuthenticate, users.update_account);
+server.get('/settings/get-global-settings', permission.isAuthenticate, permission.isAdmin, settings.get_settings);
+server.post('/settings/update-global-settings', permission.isAuthenticate, permission.isAdmin, settings.update_settings);
 
 server.get('/list_sub_admin_wise_masters/:parent_id', permission.isAuthenticate, permission.isAdmin, users.list_sub_admin_wise_masters);
 server.get('/list_master_wise_players/:parent_id', permission.isAuthenticate, users.list_master_wise_players);
