@@ -40,6 +40,7 @@ exports.login = function (req, res, next) {
                             email: rowInfo.email,
                             mobile: rowInfo.mobile,
                             address: rowInfo.address,
+                            stakes: JSON.parse(rowInfo.stakes),
                             is_betting: rowInfo.is_betting,
                         }
 
@@ -157,13 +158,13 @@ exports.create_account = async function (req, res, next) {
                 helper.sendErrorResponse(req, res, err);
             } else {
 
-                if (isSetMargin && params.margin_per > 0 && params.margin_fix > 0) {
-                    helper.sendErrorResponse(req, res, 'You can not set both type margin at same time.');
-                }
-                else if (isSetMargin && params.margin_per > 100) {
-                    helper.sendErrorResponse(req, res, 'You can not set margin more then 100%');
-                }
-                else {
+                // if (isSetMargin && params.margin_per > 0 && params.margin_fix > 0) {
+                //     helper.sendErrorResponse(req, res, 'You can not set both type margin at same time.');
+                // }
+                // else if (isSetMargin && params.margin_per > 100) {
+                //     helper.sendErrorResponse(req, res, 'You can not set margin more then 100%');
+                // }
+                // else {
 
                     let data = {
                         parent_id: params.parent_id,
@@ -174,6 +175,7 @@ exports.create_account = async function (req, res, next) {
                         email: params.email,
                         mobile: params.mobile,
                         address: params.address,
+                        stakes: JSON.stringify([100,200,500,1000,2000,5000,10000]),
                         is_betting: params.is_betting,
                         status: params.status,
                         created_at: helper.getCurrentDate(),
@@ -231,7 +233,7 @@ exports.create_account = async function (req, res, next) {
                             helper.sendResponse(req, res, result);
                         }
                     });
-                }
+                // }
             }
         });
     }
@@ -1166,4 +1168,32 @@ exports.list_master_wise_players = function (req, res, next) {
             helper.sendResponse(req, res, result);
         }
     });
+}
+
+exports.update_stakes = function (req, res, next) {
+
+    try {
+        let params = req.body;
+        
+        let data = {
+            stakes: JSON.stringify(params.stakes),
+            updated_at: helper.getCurrentDate(),
+        }
+        req.connection.query(`UPDATE users SET ? WHERE id=${currentUser.id}`, data, function (err, results) {
+
+            if (err) {
+                helper.sendErrorResponse(req, res, err);
+            } else {
+
+                let result = {
+                    status: true,
+                    message: 'Stakes updated successfully.',
+                }
+                helper.sendResponse(req, res, result);
+            }
+        });
+    }
+    catch (err) {
+        helper.sendErrorResponse(req, res, err);
+    }
 }

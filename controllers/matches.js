@@ -106,7 +106,7 @@ exports.in_play = function (req, res, next) {
 
         // need to create a view for this query
         let query = `SELECT 
-        Matche.event_id, MarketOdd.inplay, Matche.event_name, MOR.availableToBack_price_1, MOR.availableToLay_price_1 
+        Sports.id, Matche.event_id, MarketOdd.inplay, Matche.event_name, MOR.availableToBack_price_1, MOR.availableToLay_price_1 
         FROM market_odds MarketOdd 
         JOIN markets Market ON MarketOdd.marketId = Market.marketId 
         JOIN matches Matche ON Market.match_id = Matche.id
@@ -133,8 +133,10 @@ exports.in_play = function (req, res, next) {
 
                     if (lastEventID != rowInfo.event_id) {
                         rows.push({
+                            sports_id: rowInfo.id,
                             event_id: rowInfo.event_id,
                             event_name: rowInfo.event_name,
+                            event_open_date: helper.getFormatedDate(rowInfo.event_open_date, 'YYYY-MM-DD hh:mm A'),
                             inplay: rowInfo.inplay,
                             prices: [
                                 rowInfo.availableToBack_price_1,
@@ -166,11 +168,20 @@ exports.in_play = function (req, res, next) {
 
 exports.UserMatchOdds = function (req, res, next) {
 
-    let params = req.body;
-    let internalData = {};
+    let params = req.params;
+    let internalData = {
+        score: [],
+        odds: [],
+        toss: [],
+        sessions: [],
+        stakes: [],
+    };
 
     async.series([
         function (do_callback) {
+
+            do_callback();
+            return;
 
             // need to create a view for this query
             let query = `SELECT 
@@ -194,10 +205,10 @@ exports.UserMatchOdds = function (req, res, next) {
                     do_callback(err);
                 } else {
 
-                    let odds = [];
+                    let rows = [];
                     async.forEach(results, (rowInfo) => {
 
-                        odds.push({
+                        rows.push({
                             event_id: rowInfo.event_id,
                             event_name: rowInfo.event_name,
                             inplay: rowInfo.inplay,
@@ -230,15 +241,45 @@ exports.UserMatchOdds = function (req, res, next) {
                         });
                     });
 
-                    internalData.odds = odds;
+                    internalData.odds = rows;
                     do_callback();
                 }
             });
         },
         function (do_callback) {
 
-            internalData.stakes = [100, 200, 500, 1000, 2000, 5000];
-            do_callback();
+            // get sessions 
+            let query = `SELECT * FROM match_sessions WHERE event_id=${params.event_id} AND is_allowed=1 AND is_result=0 AND is_abandoned=0`;
+
+            req.connection.query(query, function (err, results, fields) {
+
+                if (err) {
+                    do_callback(err);
+                } else {
+
+                    internalData.sessions = results;
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // get score
+            let query = `SELECT * FROM match_scores WHERE event_id=${params.event_id}`;
+
+            req.connection.query(query, function (err, results, fields) {
+
+                if (err) {
+                    do_callback(err);
+                }
+                else if(results.length > 0) {
+                    internalData.score = JSON.parse(results[0].score);
+                    do_callback();
+                }
+                else {
+                    do_callback();
+                }
+            });
         },
     ], function (err) {
         if (err) {
@@ -252,7 +293,6 @@ exports.UserMatchOdds = function (req, res, next) {
                 odds: internalData.odds,
                 toss: internalData.toss,
                 sessions: internalData.sessions,
-                stakes: internalData.stakes,
             }
             helper.sendResponse(req, res, result);
         }

@@ -14,6 +14,7 @@ var sports = require('./controllers/sports');
 var series = require('./controllers/series');
 var matches = require('./controllers/matches');
 var sessions = require('./controllers/sessions');
+var bats = require('./controllers/bats');
 var settings = require('./controllers/settings');
 
 /**
@@ -71,6 +72,10 @@ server.put('/matches/delete/:match_id', permission.isAuthenticate, permission.is
 server.get('/matches/in-play', permission.isAuthenticate, permission.isPlayer, matches.in_play);
 server.get('/matches/user-match-odds/:event_id', permission.isAuthenticate, permission.isPlayer, matches.UserMatchOdds);
 
+// bats
+server.get('/bats/user-match-bats/:event_id', permission.isAuthenticate, permission.isPlayer, bats.UserMatchBats);
+server.put('/bats/delete/:event_id', permission.isAuthenticate, bats.delete);
+
 // sessions
 server.get('/sessions/listing/:event_id', permission.isAuthenticate, permission.isAdmin, sessions.listing);
 server.put('/sessions/add-remove/:session_id/:status', permission.isAuthenticate, permission.isAdmin, sessions.add_remove);
@@ -124,6 +129,7 @@ server.get('/settings/detail-account/:user_id', permission.isAuthenticate, users
 server.post('/settings/update-account', permission.isAuthenticate, users.update_account);
 server.get('/settings/get-global-settings', permission.isAuthenticate, permission.isAdmin, settings.get_settings);
 server.post('/settings/update-global-settings', permission.isAuthenticate, permission.isAdmin, settings.update_settings);
+server.post('/settings/update-stakes', permission.isAuthenticate, permission.isPlayer, users.update_stakes);
 
 server.get('/list_sub_admin_wise_masters/:parent_id', permission.isAuthenticate, permission.isAdmin, users.list_sub_admin_wise_masters);
 server.get('/list_master_wise_players/:parent_id', permission.isAuthenticate, users.list_master_wise_players);
