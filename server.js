@@ -16,6 +16,7 @@ var matches = require('./controllers/matches');
 var sessions = require('./controllers/sessions');
 var bats = require('./controllers/bats');
 var settings = require('./controllers/settings');
+var advertisements = require('./controllers/advertisements');
 
 /**
  * create server
@@ -118,6 +119,15 @@ server.put('/players/restore-account/:user_id', permission.isAuthenticate, permi
 server.post('/players/add-credit', permission.isAuthenticate, permission.isMaster, users.add_credit);
 server.post('/players/withdraw-credit', permission.isAuthenticate, permission.isMaster, users.withdraw_credit);
 server.put('/players/change-betting-status/:user_id/:betting_status', permission.isAuthenticate, permission.isMaster, users.change_betting_status);
+server.get('/players/get-advertisements', permission.isAuthenticate, advertisements.get_advertisements);
+
+// advertisements
+server.get('/advertisements/listing', permission.isAuthenticate, permission.isAdmin, advertisements.listing);
+server.post('/advertisements/create', permission.isAuthenticate, permission.isAdmin, advertisements.create);
+server.get('/advertisements/detail/:id', permission.isAuthenticate, permission.isAdmin, advertisements.detail);
+server.post('/advertisements/update', permission.isAuthenticate, permission.isAdmin, advertisements.update);
+server.put('/advertisements/change-status/:id/:status', permission.isAuthenticate, permission.isAdmin, advertisements.change_status);
+server.put('/advertisements/delete/:id', permission.isAuthenticate, permission.isAdmin, advertisements.delete);
 
 // common
 server.get('/credits/history', permission.isAuthenticate, credits.history);
