@@ -2,7 +2,9 @@
 exports.save = function (req, res, next) {
 
     let params = req.body;
-    let internalData = {};
+    let internalData = {
+        message: ''
+    };
 
     async.series([
         function (do_callback) {
@@ -51,7 +53,7 @@ exports.save = function (req, res, next) {
                     do_callback(err);
                 } 
                 else if(results.length) {
-                    internalData.marketsAndMarketOdds = results;
+                    // internalData.matchInfo = results[0];
                     do_callback();
                 }
                 else {
@@ -61,22 +63,25 @@ exports.save = function (req, res, next) {
         },
         function (do_callback) {
 
-            // set bat on session
+            // get session info 
             if(params.bat_type == 'session') {
 
-                let query = `SELECT * FROM match_sessions WHERE event_id=${params.event_id} AND SelectionId=${params.electionId}`;
+                let query = `SELECT * FROM match_sessions 
+                    WHERE is_allowed=1 AND is_result=0 AND is_abandoned=0 
+                    AND event_id=${params.event_id} AND SelectionId=${params.selectionId}`;
                 req.connection.query(query, function (err, results, fields) {
     
                     if (err) {
                         do_callback(err);
                     }
-                    else if(results[0].length) {
-                        internalData.marketsAndMarketOdds = results;
-                        do_callback();
+                    else if(!results.length) {
+                        do_callback('Session is no more available.');
+                    }
+                    else if(results[0].GameStatus) {
+                        do_callback('Session ' + results[0].GameStatus);
                     }
                     else {
-    
-                        internalData.marketsAndMarketOdds = results;
+                        internalData.sessionInfo = results[0];
                         do_callback();
                     }
                 });
@@ -87,164 +92,138 @@ exports.save = function (req, res, next) {
         },
         function (do_callback) {
 
-            let marketIDs = [];
-            internalData.marketsAndMarketOdds.forEach(element => {
-                marketIDs.push(element.marketId);
-            });
+            // calculate bat profit or loss 
+            if(params.bat_type == 'session') {
 
-            internalData.marketIDs = marketIDs.join();
-            do_callback();
-        },
-        function (do_callback) {
+                if(params.is_back) {
+                    internalData.session_run = internalData.sessionInfo.BackPrice1;
+                    internalData.session_size = internalData.sessionInfo.BackSize1;
 
-            // get markets & odds as per market
-            let query = `SELECT id, marketId, selectionId, runnerName FROM market_runners WHERE marketId IN (${internalData.marketIDs})`;
-
-            req.connection.query(query, function (err, results, fields) {
-
-                if (err) {
-                    do_callback(err);
+                    internalData.profit_loss = internalData.session_size;
                 } else {
+                    internalData.session_run = internalData.sessionInfo.LayPrice1;
+                    internalData.session_size = internalData.sessionInfo.LaySize1;
 
-                    internalData.market_runners = results;
-                    do_callback();
+                    internalData.profit_loss = internalData.session_size;
                 }
-            });
-        },
-        function (do_callback) {
-
-            // get market runners & odds as per runner
-            let query = `SELECT * FROM market_odd_runners WHERE marketId IN (${internalData.marketIDs})`;
-
-            req.connection.query(query, function (err, results, fields) {
-
-                if (err) {
-                    do_callback(err);
-                } else {
-
-                    internalData.market_odd_runners = results;
-                    do_callback();
-                }
-            });
-        },
-        function (do_callback) {
-
-            // get team name
-            if(internalData.market_runners.length > 0) {
-                internalData.homeTeamName = internalData.market_runners[0].runnerName;
-                internalData.awayTeamName = internalData.market_runners[1].runnerName;
+                
+                do_callback();
+            } else {
+                do_callback();
             }
+        },
+        function (do_callback) {
 
-            let markets = [];
-            let singleRow = {};
-            let innerCount = -1;
-            async.forEach(internalData.marketsAndMarketOdds, (singleMarketsAndMarketOdds) => {
+            // save session bat
+            if(params.bat_type == 'session') {
 
-                // add market and market odds
-                singleRow = {
-                    event_id: singleMarketsAndMarketOdds.event_id,
-                    marketId: singleMarketsAndMarketOdds.marketId,
-                    marketName: singleMarketsAndMarketOdds.marketName,
-                    marketOddStatus: singleMarketsAndMarketOdds.status,
-                    inplay: singleMarketsAndMarketOdds.inplay,
-                    runners: [],
-                };
-
-                internalData.market_runners.forEach(singleMarketRunner => {
-
-                    if(singleMarketRunner.marketId == singleMarketsAndMarketOdds.marketId) {
-
-                        innerCount++;
-
-                        // get market runners odd 
-                        let singleMarketOddRunner = internalData.market_odd_runners[innerCount];
-
-                        // add market runners 
-                        let data = {
-                            market_runner_id: singleMarketRunner.id,
-                            selectionId: singleMarketRunner.selectionId,
-                            runnerName: singleMarketRunner.runnerName,
-                            prices: [
-                                {
-                                    price: singleMarketOddRunner.availableToBack_price_1,
-                                    size: singleMarketOddRunner.availableToBack_size_1,
-                                },
-                                {
-                                    price: singleMarketOddRunner.availableToBack_price_2,
-                                    size: singleMarketOddRunner.availableToBack_size_2,
-                                },
-                                {
-                                    price: singleMarketOddRunner.availableToBack_price_3,
-                                    size: singleMarketOddRunner.availableToBack_size_3,
-                                },
-                                {
-                                    price: singleMarketOddRunner.availableToLay_price_3,
-                                    size: singleMarketOddRunner.availableToLay_size_3,
-                                },
-                                {
-                                    price: singleMarketOddRunner.availableToLay_price_2,
-                                    size: singleMarketOddRunner.availableToLay_size_2,
-                                },
-                                {
-                                    price: singleMarketOddRunner.availableToLay_price_1,
-                                    size: singleMarketOddRunner.availableToLay_size_1,
-                                }
-                            ]
-                        }
-                        singleRow.runners.push(data)
+                let data = {
+                    id: helper.getCurrentTimestamp() + '' + currentUser.id,
+                    user_id: currentUser.id,
+                    event_id: params.event_id,
+                    selectionId: params.selectionId,
+                    match_session_id: internalData.sessionInfo.id,
+                    session_size: internalData.session_size,
+                    session_run: internalData.session_run,
+                    stack: params.stack,
+                    profit_loss: internalData.profit_loss,
+                    bat_type: 'session',
+                    is_back: params.is_back,
+                    created_at: helper.getCurrentDate(),
+                }
+                req.connection.query('INSERT INTO user_bats SET ?', data, function (err, results) {
+    
+                    if (err) {
+                        do_callback(err);
+                    } else {
+                        internalData.message = 'Session bat placed successfully.'
+                        do_callback();
                     }
                 });
 
-                markets.push(singleRow);
-
-            });
-
-            internalData.markets = markets;
-            do_callback();
-
+            } else {
+                do_callback();
+            }
         },
         function (do_callback) {
 
-            // get sessions 
-            let query = `SELECT id session_id, event_id, RunnerName, LayPrice1, LaySize1, BackPrice1, BackSize1, GameStatus
-                FROM match_sessions 
-                WHERE event_id=${params.event_id} AND is_allowed=1 AND is_result=0 AND is_abandoned=0`;
+            // get odds info 
+            if(params.bat_type == 'odd') {
 
-            req.connection.query(query, function (err, results, fields) {
+                let query = `SELECT MarketOdd.id market_odd_id, MOR.availableToBack_price_3, MOR.availableToBack_size_3, MOR.availableToLay_price_1, MOR.availableToLay_size_1
+                    FROM market_odd_runners MOR
+                    JOIN market_odds MarketOdd ON MarketOdd.marketId = MOR.marketId
+                    WHERE MOR.marketId=${params.marketId} AND MOR.selectionId=${params.selectionId}`;
+                req.connection.query(query, function (err, results, fields) {
+    
+                    if (err) {
+                        do_callback(err);
+                    }
+                    else if(!results.length) {
+                        do_callback('Market is no more available.');
+                    }
+                    else {
+                        internalData.marketInfo = results[0];
+                        do_callback();
+                    }
+                });
 
-                if (err) {
-                    do_callback(err);
+            } else {
+                do_callback();
+            }
+        },
+        function (do_callback) {
+
+            // calculate bat profit or loss 
+            if(params.bat_type == 'odd') {
+
+                if(params.is_back) {
+                    internalData.betfair_amount = internalData.marketInfo.availableToBack_price_3;
+
+                    internalData.profit_loss = ((internalData.betfair_amount - 1) * 100);
                 } else {
+                    internalData.betfair_amount = internalData.marketInfo.availableToLay_price_1;
 
-                    internalData.sessions = results;
-                    do_callback();
+                    internalData.profit_loss = ((internalData.betfair_amount - 1) * 100);
                 }
-            });
+
+                do_callback();
+            } else {
+                do_callback();
+            }
         },
         function (do_callback) {
 
-            // get score
-            let query = `SELECT * FROM match_scores WHERE event_id=${params.event_id}`;
-
-            req.connection.query(query, function (err, results, fields) {
-
-                if (err) {
-                    do_callback(err);
+            // save odd bat
+            if(params.bat_type == 'odd') {
+                let data = {
+                    id: helper.getCurrentTimestamp() + '' + currentUser.id,
+                    user_id: currentUser.id,
+                    event_id: params.event_id,
+                    marketId: params.marketId,
+                    selectionId: params.selectionId,
+                    market_runner_id: params.market_runner_id,
+                    market_odd_id: internalData.marketInfo.market_odd_id,
+                    betfair_amount: internalData.betfair_amount,
+                    stack: params.stack,
+                    profit_loss: internalData.profit_loss,
+                    bat_type: 'odd',
+                    is_back: params.is_back,
+                    created_at: helper.getCurrentDate(),
                 }
-                else if (results.length > 0) {
-                    let score = JSON.parse(results[0].score);
-                    score.home.name = internalData.homeTeamName;
-                    score.away.name = internalData.awayTeamName;
-                    internalData.score = score;
+                req.connection.query('INSERT INTO user_bats SET ?', data, function (err, results) {
+    
+                    if (err) {
+                        do_callback(err);
+                    } else {
+                        internalData.message = 'Market bat placed successfully.'
+                        do_callback();
+                    }
+                });
 
-                    internalData.eventTypeId = results[0].eventTypeId;
-                    internalData.matchType = (results[0].matchType) ? 'LIMITED_OVER' : null;
-                    do_callback();
-                }
-                else {
-                    do_callback();
-                }
-            });
+            } else {
+                do_callback();
+            }
         },
     ], function (err) {
         if (err) {
@@ -253,12 +232,7 @@ exports.save = function (req, res, next) {
 
             let result = {
                 status: true,
-                message: 'User Match Odds',
-                eventTypeId: internalData.eventTypeId,
-                matchType: internalData.matchType,
-                score: internalData.score,
-                markets: internalData.markets,
-                sessions: internalData.sessions,
+                message: internalData.message,
             }
             helper.sendResponse(req, res, result);
         }
@@ -270,7 +244,12 @@ exports.UserMatchBats = function (req, res, next) {
     try {
         let params = req.params;
 
-        let query = `SELECT * FROM user_bats WHERE user_id=${currentUser.id} AND event_id=${params.event_id} AND deleted_at IS NULL`;
+        let query = `SELECT UserBat.*, MatchSession.RunnerName, MarketRunner.runnerName FROM user_bats UserBat
+            LEFT JOIN match_sessions MatchSession ON UserBat.match_session_id = MatchSession.id
+            LEFT JOIN market_runners MarketRunner ON UserBat.market_runner_id = MarketRunner.id
+            WHERE 
+            UserBat.user_id=${currentUser.id} AND UserBat.event_id=${params.event_id} 
+            AND UserBat.is_result=0 AND UserBat.deleted_at IS NULL`;
 
         req.connection.query(query, function (err, results, fields) {
 
@@ -282,10 +261,34 @@ exports.UserMatchBats = function (req, res, next) {
                 let sessions = [];
                 async.forEach(results, (rowInfo) => {
 
-                    if (rowInfo.match_session_id) {
-                        sessions.push(rowInfo);
+                    let data = {};
+                    if (rowInfo.bat_type == "session") {
+                        
+                        data = {
+                            bat_id: rowInfo.id,
+                            session_run: rowInfo.session_run,
+                            session_size: rowInfo.session_size,
+                            stack: rowInfo.stack,
+                            runnerName: rowInfo.RunnerName,
+                            profit_loss: rowInfo.profit_loss,
+                            is_back: rowInfo.is_back,
+                            getFormatedDate: helper.getFormatedDate(rowInfo.created_at),
+                        };
+
+                        sessions.push(data);
                     } else {
-                        odds.push(rowInfo);
+
+                        data = {
+                            bat_id: rowInfo.id,
+                            odds: rowInfo.betfair_amount,
+                            stack: rowInfo.stack,
+                            runnerName: rowInfo.runnerName,
+                            profit_loss: rowInfo.profit_loss,
+                            is_back: rowInfo.is_back,
+                            getFormatedDate: helper.getFormatedDate(rowInfo.created_at),
+                        };
+
+                        odds.push(data);
                     }
                 });
 
@@ -302,6 +305,209 @@ exports.UserMatchBats = function (req, res, next) {
     catch (err) {
         helper.sendErrorResponse(req, res, err);
     }
+}
+
+exports.getUserMatchScore = function (req, res, next) {
+
+    let params = req.params;
+    let internalData = {
+        market_wise_profit_loss_info: [],
+        session_wise_profit_loss_info: [],
+        sectionWiseBats: {
+            odd: [],
+            session: [],
+        }
+    };
+
+    async.series([
+        function (do_callback) {
+
+            // get bats
+            let query = `SELECT id, selectionId, match_session_id, session_run, session_size, stack, profit_loss, bat_type, is_back
+                FROM user_bats 
+                WHERE user_id=${currentUser.id} AND event_id=${params.event_id} AND is_result=0 AND deleted_at IS NULL
+                ORDER BY selectionId DESC, marketId ASC`;
+            req.connection.query(query, function (err, results, fields) {
+
+                if (err) {
+                    do_callback(err);
+                } else {
+
+                    internalData.bats = results;
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // divide bats into sessions & odds 
+
+            let count_odd = 0;
+            let count_session = 0;
+            let selectionId = 0;
+            async.forEachOf(internalData.bats, (rowInfo, key, callback) => {
+
+                if (selectionId != rowInfo.selectionId) {
+                    
+                    if (rowInfo.bat_type == "session") {
+
+                        internalData.sectionWiseBats[rowInfo.bat_type].push([]);
+                        internalData.sectionWiseBats[rowInfo.bat_type][count_session].push(rowInfo);
+
+                        count_session++;
+                    } else {
+
+                        internalData.sectionWiseBats[rowInfo.bat_type].push([]);
+                        internalData.sectionWiseBats[rowInfo.bat_type][count_odd].push(rowInfo);
+
+                        count_odd++;
+                    }
+
+                    callback();
+                } else {
+
+                    if (rowInfo.bat_type == "session") {
+
+                        internalData.sectionWiseBats[rowInfo.bat_type][count_session-1].push(rowInfo);
+                    } else {
+
+                        internalData.sectionWiseBats[rowInfo.bat_type][count_odd-1].push(rowInfo);
+                    }
+                    callback();
+                }
+
+                selectionId = rowInfo.selectionId;
+            }, err => {
+                if (err) {
+                    do_callback(err);
+                } else {
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // sort the session bats data
+            async.forEachOf(internalData.sectionWiseBats.session, (bats, key, callback) => {
+
+                bats.sort((a, b) => {
+                    if(a.session_run < b.session_run) { return -1; }
+                    if(a.session_run > b.session_run) { return  1; }
+                  
+                    // else names must be equal
+                    return 0;
+                });
+                
+                callback();
+            }, err => {
+                if (err) {
+                    do_callback(err);
+                } else {
+                    do_callback();
+                }
+            });
+        },
+        function (do_callback) {
+
+            // generate the session blocks as per possible conditions
+            let count = 0;
+            let min_run = 0;
+            let table_index = '';
+            let max_exposure = 0;
+            let batTable = [];
+            async.forEachOf(internalData.sectionWiseBats.session, (bats, key, callback) => {
+
+                async.forEachOf(bats, (outerSingleBat, key, callback_1) => {
+
+                    count++;
+
+                    if(bats.length > count) {
+                        table_index = min_run + '-' + (outerSingleBat.session_run-1);
+                    } else {
+                        table_index = min_run + '+';
+                    }
+                    min_run = outerSingleBat.session_run;
+
+                    let profit_loss = 0;
+
+                    // calculate the profit or loss by block wise 
+                    async.forEachOf(bats, (innerSingleBat, key, callback_2) => {
+
+                        if(innerSingleBat.is_back) {
+
+                            if(table_index.indexOf('+') != -1) {
+                                if(outerSingleBat.session_run >= innerSingleBat.session_run) {
+                                    profit_loss = (profit_loss + innerSingleBat.profit_loss);
+                                } else {
+                                    profit_loss = (profit_loss - innerSingleBat.profit_loss);
+                                }
+                            } else {
+                                if(outerSingleBat.session_run <= innerSingleBat.session_run) {
+                                    profit_loss = (profit_loss - innerSingleBat.profit_loss);
+                                } else {
+                                    profit_loss = (profit_loss + innerSingleBat.profit_loss);
+                                }
+                            }
+                        } else {
+                            if(outerSingleBat.session_run <= innerSingleBat.session_run) {
+                                profit_loss = (profit_loss + innerSingleBat.profit_loss);
+                            } else {
+                                profit_loss = (profit_loss - innerSingleBat.profit_loss);
+                            }
+                        }
+                        
+                        callback_2();                    
+                    }, err => {
+                        if (err) {
+                            callback_1(err);
+                        } else {
+
+                            // calculate max exposure
+                            max_exposure = (profit_loss < max_exposure) ? profit_loss : max_exposure;
+
+                            batTable.push([table_index, profit_loss]);
+                            callback_1();
+                        }
+                    });
+                  
+                }, err => {
+                    if (err) {
+                        callback(err);
+                    } else {
+
+                        internalData.session_wise_profit_loss_info.push({
+                            session_id: bats[0].id,
+                            match_session_id: bats[0].match_session_id,
+                            selectionId: bats[0].selectionId,
+                            max_exposure: max_exposure,
+                            bats: batTable
+                        })
+                        callback();
+                    }
+                });
+            }, err => {
+                if (err) {
+                    do_callback(err);
+                } else {
+                    do_callback();
+                }
+            });
+        },
+    ], function (err) {
+        if (err) {
+            helper.sendErrorResponse(req, res, err);
+        } else {
+
+            let result = {
+                status: true,
+                message: 'User match score',
+                // session: internalData.sectionWiseBats.session,
+                market_wise_profit_loss_info: [],
+                session_wise_profit_loss_info: internalData.session_wise_profit_loss_info,
+            }
+            helper.sendResponse(req, res, result);
+        }
+    });
 }
 
 exports.delete = function (req, res, next) {

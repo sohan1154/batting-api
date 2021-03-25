@@ -127,6 +127,10 @@ exports.getCurrentDate = (format = "YYYY-MM-DD HH:mm:ss") => {
     return moment().format(format);
 }
 
+exports.getCurrentTimestamp = () => {
+    return moment().unix();
+}
+
 exports.getSerializedFormated = (jsonObj) => {
 
     if(!jsonObj || typeof jsonObj === 'undefined') {

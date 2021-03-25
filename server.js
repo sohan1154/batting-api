@@ -76,6 +76,8 @@ server.get('/matches/user-match-odds/:event_id', permission.isAuthenticate, perm
 // bats
 server.get('/bats/user-match-bats/:event_id', permission.isAuthenticate, permission.isPlayer, bats.UserMatchBats);
 server.put('/bats/delete/:event_id', permission.isAuthenticate, bats.delete);
+server.post('/bats/save', permission.isAuthenticate, permission.isPlayer, bats.save);
+server.get('/bats/user-match-score/:event_id', permission.isAuthenticate, permission.isPlayer, bats.getUserMatchScore);
 
 // sessions
 server.get('/sessions/listing/:event_id', permission.isAuthenticate, permission.isAdmin, sessions.listing);
