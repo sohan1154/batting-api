@@ -2,10 +2,10 @@ var moment = require('moment'); // require
 var momentTimezone = require('moment-timezone'); // require
 
 exports.vewRequest = (req, res, next) => {
-    console.log('###################### REQUEST ############################')
-    console.warn('QUERY=>', req.query);
-    console.warn('PARAMS=>', req.params);
-    console.warn('BODY=>', req.body);
+    // console.log('###################### REQUEST ############################')
+    // console.warn('QUERY=>', req.query);
+    // console.warn('PARAMS=>', req.params);
+    // console.warn('BODY=>', req.body);
 
     return next();
 }
@@ -34,8 +34,8 @@ exports.sendResponse = (req, res, data) => {
     // close database connection
     req.connection.end();
 
-    console.log('###################### SUCCESS RESPONSE ############################')
-    console.log('Response has been sent.');
+    // console.log('###################### SUCCESS RESPONSE ############################')
+    // console.log('Response has been sent.');
     // console.log(data);
 
     res.status(200);

@@ -58,16 +58,16 @@ server.post('/login', users.login);
 server.get('/logout', users.logout);
 
 // sports   
-server.get('/sports/listing', permission.isAuthenticate, permission.isAdmin, sports.listing);
+server.get('/sports/listing', permission.isAuthenticate, sports.listing);
 server.put('/sports/change-status/:sports_id/:status', permission.isAuthenticate, permission.isAdmin, sports.change_status);
 
 // series
-server.get('/series/listing', permission.isAuthenticate, permission.isAdmin, series.listing);
+server.get('/series/listing', permission.isAuthenticate, series.listing);
 server.put('/series/change-status/:series_id/:status', permission.isAuthenticate, permission.isAdmin, series.change_status);
 server.put('/series/delete/:series_id', permission.isAuthenticate, permission.isAdmin, series.delete);
 
 // matches
-server.get('/matches/listing', permission.isAuthenticate, permission.isAdmin, matches.listing);
+server.get('/matches/listing', permission.isAuthenticate, matches.listing);
 server.put('/matches/change-status/:match_id/:status', permission.isAuthenticate, permission.isAdmin, matches.change_status);
 server.put('/matches/delete/:match_id', permission.isAuthenticate, permission.isAdmin, matches.delete);
 server.get('/matches/in-play', permission.isAuthenticate, permission.isPlayer, matches.in_play);
@@ -80,7 +80,7 @@ server.post('/bats/save', permission.isAuthenticate, permission.isPlayer, bats.s
 server.get('/bats/user-match-score/:event_id', permission.isAuthenticate, permission.isPlayer, bats.getUserMatchScore);
 
 // sessions
-server.get('/sessions/listing/:event_id', permission.isAuthenticate, permission.isAdmin, sessions.listing);
+server.get('/sessions/listing/:event_id', permission.isAuthenticate, sessions.listing);
 server.put('/sessions/add-remove/:session_id/:status', permission.isAuthenticate, permission.isAdmin, sessions.add_remove);
 server.put('/sessions/abandoned/:session_id', permission.isAuthenticate, permission.isAdmin, sessions.abandoned);
 

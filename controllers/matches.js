@@ -284,28 +284,28 @@ exports.UserMatchOdds = function (req, res, next) {
                             runnerName: singleMarketRunner.runnerName,
                             prices: [
                                 {
-                                    price: singleMarketOddRunner.availableToBack_price_1,
-                                    size: singleMarketOddRunner.availableToBack_size_1,
+                                    price: singleMarketOddRunner.availableToBack_price_3,
+                                    size: singleMarketOddRunner.availableToBack_size_3,
                                 },
                                 {
                                     price: singleMarketOddRunner.availableToBack_price_2,
                                     size: singleMarketOddRunner.availableToBack_size_2,
                                 },
                                 {
-                                    price: singleMarketOddRunner.availableToBack_price_3,
-                                    size: singleMarketOddRunner.availableToBack_size_3,
+                                    price: singleMarketOddRunner.availableToBack_price_1,
+                                    size: singleMarketOddRunner.availableToBack_size_1,
                                 },
                                 {
-                                    price: singleMarketOddRunner.availableToLay_price_3,
-                                    size: singleMarketOddRunner.availableToLay_size_3,
+                                    price: singleMarketOddRunner.availableToLay_price_1,
+                                    size: singleMarketOddRunner.availableToLay_size_1,
                                 },
                                 {
                                     price: singleMarketOddRunner.availableToLay_price_2,
                                     size: singleMarketOddRunner.availableToLay_size_2,
                                 },
                                 {
-                                    price: singleMarketOddRunner.availableToLay_price_1,
-                                    size: singleMarketOddRunner.availableToLay_size_1,
+                                    price: singleMarketOddRunner.availableToLay_price_3,
+                                    size: singleMarketOddRunner.availableToLay_size_3,
                                 }
                             ]
                         }
