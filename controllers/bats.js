@@ -312,7 +312,6 @@ exports.getUserMatchScore = function (req, res, next) {
 
     let params = req.params;
     let internalData = {
-        // session_wise_profit_loss_info: [],
         sessionWiseProfitLossInfo: {},
         marketProfitLossRunnerWise: {},
         sectionWiseBats: {
@@ -440,7 +439,7 @@ exports.getUserMatchScore = function (req, res, next) {
 
                     count++;
 
-                    if (bats.length > count) {
+                    if (bats.length >= count) {
                         table_index = min_run + '-' + (outerSingleBat.session_run - 1);
                     } else {
                         table_index = min_run + '+';
@@ -448,7 +447,7 @@ exports.getUserMatchScore = function (req, res, next) {
                     min_run = outerSingleBat.session_run;
 
                     let profit_loss = 0;
-
+                    // let batTable = [];
                     // calculate the profit or loss by block wise 
                     async.forEachOf(bats, (innerSingleBat, key, callback_2) => {
 
@@ -494,14 +493,6 @@ exports.getUserMatchScore = function (req, res, next) {
                     if (err) {
                         callback(err);
                     } else {
-
-                        // internalData.session_wise_profit_loss_info.push({
-                        //     bat_id: bats[0].id,
-                        //     match_session_id: bats[0].match_session_id,
-                        //     selectionId: bats[0].selectionId,
-                        //     max_exposure: max_exposure,
-                        //     bats: batTable
-                        // })
 
                         internalData.sessionWiseProfitLossInfo[bats[0].match_session_id] = {
                             bat_id: bats[0].id,
@@ -602,7 +593,6 @@ exports.getUserMatchScore = function (req, res, next) {
                 // odd: internalData.sectionWiseBats.odd,
                 user_available_credit: currentUser.credit,
                 market_wise_profit_loss_info: internalData.marketProfitLossRunnerWise,
-                // session_wise_profit_loss_info: internalData.session_wise_profit_loss_info,
                 session_wise_profit_loss_info: internalData.sessionWiseProfitLossInfo,
             }
             helper.sendResponse(req, res, result);

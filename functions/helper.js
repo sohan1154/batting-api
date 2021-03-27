@@ -50,7 +50,7 @@ exports.sendErrorResponse = (req, res, err) => {
 
     if (typeof err.code !== 'undefined') {
 
-        console.log('Code:', err.code);
+        // console.log('Code:', err.code);
 
         switch (err.code) {
             case 'ER_DUP_ENTRY':
@@ -75,8 +75,8 @@ exports.sendErrorResponse = (req, res, err) => {
     // close database connection
     req.connection.end();
 
-    console.log('###################### ERROR RESPONSE ############################')
-    console.log(data);
+    // console.log('###################### ERROR RESPONSE ############################')
+    // console.log(data);
 
     res.status(203);
     res.json(data);
@@ -97,7 +97,6 @@ exports.generatePassword = (plaintextPassword, callback) => {
 
 exports.matchPassword = (plaintextPassword, hashPassword, callback) => {
     let bcrypt = require('bcrypt');
-console.log('klasdjlakjdlajdlakjdlajsdlakjdlajdlkajldkjaldkajlsdjaldja')
     bcrypt.compare(plaintextPassword, hashPassword, function (err, result) {
         if (err) {
             callback(err);

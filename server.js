@@ -24,6 +24,39 @@ var advertisements = require('./controllers/advertisements');
 var server = restify.createServer();
 
 /**
+ * socket server configration 
+ */
+// const httpServer = require('http').createServer();
+// const io = require('socket.io')(httpServer);
+// io.on("connection", socket => {
+//   // either with send()
+//   socket.send("Hello!");
+
+//   // or with emit() and custom event names
+//   socket.emit("greetings", "Hey!", { "ms": "jane" }, Buffer.from([4, 3, 3, 1]));
+
+//   // handle the event sent with socket.send()
+//   socket.on("message", (data) => {
+//     console.log(data);
+//   });
+
+//   // handle the event sent with socket.emit()
+//   socket.on("salutations", (elem1, elem2, elem3) => {
+//     console.log(elem1, elem2, elem3);
+//   });
+// });
+// httpServer.listen(3003, function () {
+//   console.log('Http server listening on port 3003');
+// });
+
+const io = require('socket.io')();
+io.on('connection', client => { 
+  client.on('event', data => { message: 'Hello' });
+  client.on('disconnect', () => { message: 'Connection end' });
+ });
+io.listen(3003);
+
+/**
  * handle cors middleware 
  */
 const corsMiddleware = require('restify-cors-middleware');

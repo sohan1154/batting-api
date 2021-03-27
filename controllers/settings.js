@@ -14,7 +14,6 @@ exports.get_settings = function (req, res, next) {
                 if (err) {
                     do_callback(err);
                 } else {
-                    console.log(results)
                     internalData.settings = results[0];
                     do_callback();
                 }
@@ -37,7 +36,6 @@ exports.get_settings = function (req, res, next) {
         },
         function (do_callback) {
 
-            console.log(internalData.settings)
             internalData.data = {
                 app_name: internalData.settings.app_name,
                 is_bat_allowed: internalData.settings.is_bat_allowed,

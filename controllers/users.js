@@ -74,7 +74,6 @@ function manageToken(req, params, userInfo, callback) {
 
     let query = `SELECT * FROM user_tokens WHERE user_id=${userInfo.id}`;
     req.connection.query(query, function (err, results) {
-        console.log('results:', results)
         if (err) {
             callback(err);
         }
@@ -100,7 +99,6 @@ function manageToken(req, params, userInfo, callback) {
             // let query = `UPDATE user_tokens SET token='${token}', updated_at='${helper.getCurrentDate()}' WHERE user_id=${userInfo.id}`;
             // c.log('query:', query)
             // req.connection.query(query, function (err, results) {
-            //     console.log('results:', results)
             //     if (err) {
             //         callback(err);
             //     } else {
@@ -219,9 +217,9 @@ exports.create_account = async function (req, res, next) {
                                 req.connection.query('INSERT INTO user_credits SET ?', data, function (err, results) {
 
                                     if (err) {
-                                        console.log('Account created, but error in create transaction for credit.');
+                                        // console.log('Account created, but error in create transaction for credit.');
                                     } else {
-                                        console.log('Account created and Credit added into account.');
+                                        // console.log('Account created and Credit added into account.');
                                     }
                                 });
                             }
@@ -449,7 +447,6 @@ exports.update_account = function (req, res, next) {
 exports.change_password = function (req, res, next) {
 
     var params = req.body;
-    console.log(currentUser.id, '==', params.user_id);
     let user_id = (currentUser.id == params.user_id) ? currentUser.id : params.user_id;
     let isSelf = (currentUser.id == params.user_id) ? true : false;
 
@@ -945,8 +942,6 @@ exports.withdraw_credit = function (req, res, next) {
         },
         function (do_callback) {
 
-            console.log('internalData.user::::::',internalData.user)
-            console.log('internalData.master::::::',internalData.master)
             // update master account credit
             if(internalData.user.role == 'Player') {
 
