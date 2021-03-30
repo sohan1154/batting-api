@@ -1,9 +1,11 @@
 var moment = require('moment'); // require
+var momentTimezone = require('moment-timezone'); // require
 
 exports.vewRequest = (req, res, next) => {
-    console.log('###################### REQUEST ############################')
-    console.warn('PARAMS=>', req.params);
-    console.warn('BODY=>', req.body);
+    // console.log('###################### REQUEST ############################')
+    // console.warn('QUERY=>', req.query);
+    // console.warn('PARAMS=>', req.params);
+    // console.warn('BODY=>', req.body);
 
     return next();
 }
@@ -32,8 +34,9 @@ exports.sendResponse = (req, res, data) => {
     // close database connection
     req.connection.end();
 
-    console.log('###################### SUCCESS RESPONSE ############################')
-    console.log(data);
+    // console.log('###################### SUCCESS RESPONSE ############################')
+    // console.log('Response has been sent.');
+    // console.log(data);
 
     res.status(200);
     res.json(data);
@@ -47,7 +50,7 @@ exports.sendErrorResponse = (req, res, err) => {
 
     if (typeof err.code !== 'undefined') {
 
-        console.log('Code:', err.code);
+        // console.log('Code:', err.code);
 
         switch (err.code) {
             case 'ER_DUP_ENTRY':
@@ -72,8 +75,8 @@ exports.sendErrorResponse = (req, res, err) => {
     // close database connection
     req.connection.end();
 
-    console.log('###################### ERROR RESPONSE ############################')
-    console.log(data);
+    // console.log('###################### ERROR RESPONSE ############################')
+    // console.log(data);
 
     res.status(203);
     res.json(data);
@@ -94,7 +97,6 @@ exports.generatePassword = (plaintextPassword, callback) => {
 
 exports.matchPassword = (plaintextPassword, hashPassword, callback) => {
     let bcrypt = require('bcrypt');
-console.log('klasdjlakjdlajdlakjdlajsdlakjdlajdlkajldkjaldkajlsdjaldja')
     bcrypt.compare(plaintextPassword, hashPassword, function (err, result) {
         if (err) {
             callback(err);
@@ -117,11 +119,15 @@ exports.generateToken = (text) => {
 }
 
 exports.getFormatedDate = (date, format = "YYYY-MM-DD HH:mm:ss") => {
-    return moment(date).format(format);
+    return momentTimezone(date).utcOffset("+05:30").format(format);
 }
 
 exports.getCurrentDate = (format = "YYYY-MM-DD HH:mm:ss") => {
     return moment().format(format);
+}
+
+exports.getCurrentTimestamp = () => {
+    return moment().unix();
 }
 
 exports.getSerializedFormated = (jsonObj) => {

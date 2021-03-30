@@ -8,11 +8,14 @@
     "axios": "^0.20.0",
     "bcrypt": "^5.0.0",
     "cron": "^1.8.2",
+    "http": "0.0.1-security",
     "moment": "^2.27.0",
+    "moment-timezone": "^0.5.33",
     "mysql": "^2.18.1",
     "php-unserialize": "0.0.1",
     "restify": "^8.5.1",
-    "restify-cors-middleware": "^1.1.1"
+    "restify-cors-middleware": "^1.1.1",
+    "socket.io": "^4.0.0"
   },
   "devDependencies": {},
   "scripts": {
