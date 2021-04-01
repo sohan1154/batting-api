@@ -2,6 +2,7 @@
 // local 
 module.exports = {
     port: 3001,
+    socketPort: 3002,
     appName: 'Bet-In-Vegas Server',
     //baseUrl: 'http://172.104.41.239:3001/',
     baseUrl: 'http://localhost:3001/',
