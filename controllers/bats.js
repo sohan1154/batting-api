@@ -433,23 +433,31 @@ exports.getUserMatchScore = function (req, res, next) {
                 let count = 0;
                 let min_run = 0;
                 let table_index = '';
+                let last_table_index = '';
                 let max_exposure = 0;
                 let batTable = [];
                 async.forEachOf(bats, (outerSingleBat, key, callback_1) => {
 
+                    console.log('bats:::::::', bats)
+
                     count++;
 
-                    if (bats.length >= count) {
-                        table_index = min_run + '-' + (outerSingleBat.session_run - 1);
-                    } else {
-                        table_index = min_run + '+';
-                    }
+                    // if (bats.length >= count) {
+                    //     table_index = min_run + '-' + (outerSingleBat.session_run - 1);
+                    // } else {
+                    //     table_index = min_run + '+';
+                    // }
+                    table_index = min_run + '-' + (outerSingleBat.session_run - 1);
                     min_run = outerSingleBat.session_run;
 
                     let profit_loss = 0;
+                    let last_profit_loss = 0;
                     // let batTable = [];
+                    let innerCount = 0;
                     // calculate the profit or loss by block wise 
                     async.forEachOf(bats, (innerSingleBat, key, callback_2) => {
+
+                        innerCount++;
 
                         if (innerSingleBat.is_back) {
 
@@ -461,6 +469,7 @@ exports.getUserMatchScore = function (req, res, next) {
                                     profit_loss = (profit_loss - innerSingleBat.stack);
                                 }
                             } else {
+
                                 if (outerSingleBat.session_run <= innerSingleBat.session_run) {
                                     profit_loss = (profit_loss - innerSingleBat.stack);
                                 } else {
@@ -475,6 +484,27 @@ exports.getUserMatchScore = function (req, res, next) {
                             }
                         }
 
+                        // call only for last condition (means more then last run for example 100+)
+                        if(bats.length == innerCount) {
+
+                            last_table_index = min_run + '+';
+                            
+                            if (innerSingleBat.is_back) {
+
+                                if (outerSingleBat.session_run <= innerSingleBat.session_run) {
+                                    last_profit_loss = (last_profit_loss + innerSingleBat.stack);
+                                } else {
+                                    last_profit_loss = (last_profit_loss - innerSingleBat.profit_loss);
+                                }
+                            } else {
+                                if (outerSingleBat.session_run <= innerSingleBat.session_run) {
+                                    last_profit_loss = (last_profit_loss - innerSingleBat.profit_loss);
+                                } else {
+                                    last_profit_loss = (last_profit_loss + innerSingleBat.stack);
+                                }
+                            }
+                        }
+
                         callback_2();
                     }, err => {
                         if (err) {
@@ -482,9 +512,12 @@ exports.getUserMatchScore = function (req, res, next) {
                         } else {
 
                             // calculate max exposure
-                            max_exposure = (profit_loss < max_exposure) ? profit_loss : max_exposure;
-
+                            max_exposure = (profit_loss < last_profit_loss) ? profit_loss : last_profit_loss;
                             batTable.push([table_index, profit_loss]);
+
+                            // calculate table for last index
+                            batTable.push([last_table_index, last_profit_loss]);
+
                             callback_1();
                         }
                     });
@@ -591,8 +624,8 @@ exports.getUserMatchScore = function (req, res, next) {
                 message: 'User match score',
                 user_available_credit: currentUser.credit,
                 // odd: internalData.sectionWiseBats.odd,
-                // market_wise_profit_loss_info: internalData.marketProfitLossRunnerWise,
-                session: internalData.sectionWiseBats.session,
+                market_wise_profit_loss_info: internalData.marketProfitLossRunnerWise,
+                // session: internalData.sectionWiseBats.session,
                 session_wise_profit_loss_info: internalData.sessionWiseProfitLossInfo,
             }
             helper.sendResponse(req, res, result);
