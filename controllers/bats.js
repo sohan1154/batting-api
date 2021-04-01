@@ -428,13 +428,13 @@ exports.getUserMatchScore = function (req, res, next) {
 
             // generate the session blocks as per possible conditions
 
-            let count = 0;
-            let min_run = 0;
-            let table_index = '';
-            let max_exposure = 0;
-            let batTable = [];
             async.forEachOf(internalData.sectionWiseBats.session, (bats, key, callback) => {
-
+                
+                let count = 0;
+                let min_run = 0;
+                let table_index = '';
+                let max_exposure = 0;
+                let batTable = [];
                 async.forEachOf(bats, (outerSingleBat, key, callback_1) => {
 
                     count++;
@@ -589,10 +589,10 @@ exports.getUserMatchScore = function (req, res, next) {
             let result = {
                 status: true,
                 message: 'User match score',
-                // session: internalData.sectionWiseBats.session,
-                // odd: internalData.sectionWiseBats.odd,
                 user_available_credit: currentUser.credit,
-                market_wise_profit_loss_info: internalData.marketProfitLossRunnerWise,
+                // odd: internalData.sectionWiseBats.odd,
+                // market_wise_profit_loss_info: internalData.marketProfitLossRunnerWise,
+                session: internalData.sectionWiseBats.session,
                 session_wise_profit_loss_info: internalData.sessionWiseProfitLossInfo,
             }
             helper.sendResponse(req, res, result);
