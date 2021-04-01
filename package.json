@@ -5,9 +5,10 @@
   "main": "server.js",
   "dependencies": {
     "async": "^3.2.0",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "bcrypt": "^5.0.0",
     "cron": "^1.8.2",
+    "express": "^4.17.1",
     "http": "0.0.1-security",
     "moment": "^2.27.0",
     "moment-timezone": "^0.5.33",
