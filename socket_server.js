@@ -2,6 +2,7 @@ var express = require('express')
 const app = express();
 global.async = require("async");
 global.config = require('./config/config');
+global.socketDBConnection = require('./config/socketConnection');
 
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
@@ -30,7 +31,7 @@ io.on('connection', client => {
   console.log("A user connected!!");
 
   setInterval(() => {
-    console.log(client.handshake.query['eventID']);
+    console.log('Event ID:', client.handshake.query['eventID']);
     //DataTransfer({data:socket.handshake.query['eventID']})
     matches.UserMatchOdds(client.handshake.query['eventID'], result => {
       client.emit('UserMatchOdds', result);

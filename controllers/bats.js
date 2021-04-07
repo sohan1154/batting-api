@@ -217,6 +217,12 @@ exports.save = function (req, res, next) {
                     if (err) {
                         do_callback(err);
                     } else {
+
+                        let credit = currentUser.credit - params.stack;
+                        bat_profit_and_loss_calculation.updateUserCredit(req, credit, function(err, result) {
+                            // update user credits 
+                        });
+
                         internalData.message = 'Market bat placed successfully.'
                         do_callback();
                     }
@@ -429,7 +435,7 @@ exports.getUserMatchScore = function (req, res, next) {
             // generate the session blocks as per possible conditions
 
             async.forEachOf(internalData.sectionWiseBats.session, (bats, key, callback) => {
-                
+
                 let count = 0;
                 let min_run = 0;
                 let table_index = '';
@@ -485,10 +491,10 @@ exports.getUserMatchScore = function (req, res, next) {
                         }
 
                         // call only for last condition (means more then last run for example 100+)
-                        if(bats.length == innerCount) {
+                        if (bats.length == innerCount) {
 
                             last_table_index = min_run + '+';
-                            
+
                             if (innerSingleBat.is_back) {
 
                                 if (outerSingleBat.session_run <= innerSingleBat.session_run) {
@@ -548,6 +554,7 @@ exports.getUserMatchScore = function (req, res, next) {
         },
         function (do_callback) {
 
+            // calculate profit & loss market runner wise
             async.forEachOf(internalData.marketRunners, (singleMarketRunner, key, callback) => {
 
                 let profit_loss = 0;
@@ -560,7 +567,7 @@ exports.getUserMatchScore = function (req, res, next) {
                         if (innerSingleBat.marketId == singleMarketRunner.marketId) {
                             // console.log('--------------', singleMarketRunner.marketId)
 
-                            if(innerSingleBat.market_runner_id == singleMarketRunner.id) {
+                            if (innerSingleBat.market_runner_id == singleMarketRunner.id) {
                                 // console.log('YES:::::::', singleMarketRunner.id, ':::is_back:::', innerSingleBat.is_back)
 
                                 if (innerSingleBat.is_back) {
@@ -593,7 +600,7 @@ exports.getUserMatchScore = function (req, res, next) {
                     if (err) {
                         callback(err);
                     } else {
-                        
+
                         internalData.marketProfitLossRunnerWise[singleMarketRunner.id] = {
                             market_runner_id: singleMarketRunner.id,
                             marketId: singleMarketRunner.marketId,
